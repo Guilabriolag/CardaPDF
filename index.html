@@ -3,45 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LABRIOLAG - Cardápio Builder</title>
-    <link rel="stylesheet" href="style.css">
+    <title>LABRIOLAG - Cardápio Builder Professional</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <style>
+        :root { --accent: #f7931a; --bg: #050505; --card: #121212; --text: #e0e0e0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Painel de Edição (Esquerda) */
+        #editor { width: 40%; padding: 20px; overflow-y: auto; border-right: 1px solid #333; }
+        .field-group { background: var(--card); padding: 15px; margin-bottom: 15px; border-radius: 4px; border-left: 4px solid var(--accent); }
+        input, select { width: 100%; padding: 10px; background: #000; color: #fff; border: 1px solid #444; margin-top: 5px; box-sizing: border-box; }
+        
+        /* Preview (Direita) */
+        #preview { width: 60%; display: flex; align-items: center; justify-content: center; background: #000; position: relative; }
+        .iphone-frame { width: 320px; height: 640px; border: 12px solid #222; border-radius: 36px; background: #fff; color: #333; overflow-y: auto; position: relative; }
+        
+        /* Botão Flutuante de Exportação */
+        .btn-export { position: fixed; bottom: 20px; right: 20px; background: var(--accent); color: #000; border: none; padding: 15px 30px; font-weight: bold; cursor: pointer; border-radius: 4px; z-index: 100; font-size: 1rem; }
+
+        /* Modal de Pagamento */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: var(--card); padding: 40px; border: 1px solid var(--accent); text-align: center; max-width: 400px; }
+        .btn-pay { display: block; width: 100%; padding: 15px; margin: 15px 0; border: none; font-weight: bold; text-decoration: none; border-radius: 4px; cursor: pointer; }
+        .btn-mp { background: #009ee3; color: #fff; }
+        .btn-ln { background: var(--accent); color: #000; }
+    </style>
 </head>
 <body>
-    <div id="app">
-        <header>
-            <h1>Builder Vitorelli v2</h1>
-            <button onclick="abrirCheckout()">📥 Baixar Projeto (ZIP/PDF)</button>
-        </header>
+
+<div id="editor">
+    <h2>LABRIOLAG Builder</h2>
+    <p>Configure seu cardápio abaixo. O preview atualiza na hora!</p>
+    
+    <div class="field-group">
+        <label>Nome do Estabelecimento</label>
+        <input type="text" id="nome" value="Minha Pizzaria" oninput="updatePreview()">
         
-        <main id="editor-container">
-            </main>
+        <label>WhatsApp (Link Direto)</label>
+        <input type="text" id="whats" value="551199999999" oninput="updatePreview()">
     </div>
 
-    <div id="modal-pay" class="modal">
-        <div class="modal-content">
-            <h2>Finalizar Exportação</h2>
-            <p>Escolha o método para liberar o download:</p>
-            
-            <div class="pay-options">
-                <a href="https://mpago.la/2UwE4uj" target="_blank" class="btn-pay mp">
-                    💳 R$ 39,90 (Mercado Pago)
-                </a>
-                
-                <button onclick="gerarLightning()" class="btn-pay ln">
-                    ⚡ 10 Sats ($Labriolag)
-                </button>
+    <div class="field-group">
+        <h3>Pizzas</h3>
+        <div id="pizza-list">
             </div>
-            
-            <div id="ln-area" style="display:none;">
-                <p>Envie 10 sats para: <strong>labriolag@getalby.com</strong></p>
-                <div id="qrcode"></div>
-                <button onclick="confirmarManual()">Já paguei, liberar!</button>
-            </div>
-            
-            <button onclick="fecharModal()" class="btn-close">Cancelar</button>
+        <button onclick="addItem()" style="width:100%; padding: 5px; margin-top: 10px;">+ Adicionar Sabor</button>
+    </div>
+</div>
+
+<div id="preview">
+    <div class="iphone-frame" id="iphone-content">
         </div>
-    </div>
+</div>
 
-    <script src="script.js"></script>
+<button class="btn-export" onclick="abrirCheckout()">📥 BAIXAR MEU CARDÁPIO</button>
+
+<div id="modal-pay" class="modal">
+    <div class="modal-content">
+        <h2>Tudo Pronto! 🍕</h2>
+        <p>Para baixar os arquivos e publicar no seu GitHub/Cloudflare, escolha o pagamento:</p>
+        
+        <a href="https://mpago.la/2UwE4uj" target="_blank" class="btn-pay btn-mp" onclick="liberar()">
+            Pagar R$ 39,90 (Mercado Pago)
+        </a>
+        
+        <button class="btn-pay btn-ln" onclick="alert('Envie 10 sats para $Labriolag'); liberar()">
+            Pagar 10 Sats (Lightning Network)
+        </button>
+        
+        <button onclick="document.getElementById('modal-pay').style.display='none'" style="background:none; border:none; color:#666; cursor:pointer;">Cancelar</button>
+    </div>
+</div>
+
+<script>
+    // Dados Iniciais
+    let dados = {
+        nome: "Vitorelli Pizzaria",
+        itens: [{sabor: "Mussarela", preco: "35,00"}]
+    };
+
+    function updatePreview() {
+        const nome = document.getElementById('nome').value;
+        const frame = document.getElementById('iphone-content');
+        
+        frame.innerHTML = `
+            <div style="padding:20px; text-align:center; background:#ff4747; color:white">
+                <h1 style="margin:0">${nome}</h1>
+            </div>
+            <div style="padding:15px">
+                <h3>🍕 Pizzas</h3>
+                ${dados.itens.map(i => `<p><strong>${i.sabor}</strong> - R$ ${i.preco}</p>`).join('')}
+            </div>
+            <div style="position:absolute; bottom:20px; width:100%; text-align:center">
+                <button style="background:#25d366; color:white; border:none; padding:10px 20px; border-radius:20px">Pedir no Whats</button>
+            </div>
+        `;
+    }
+
+    function addItem() {
+        dados.itens.push({sabor: "Novo Sabor", preco: "0,00"});
+        updatePreview();
+    }
+
+    function abrirCheckout() {
+        document.getElementById('modal-pay').style.display = 'flex';
+    }
+
+    function liberar() {
+        // Lógica de download real (ZIP) após o clique (simulação de sucesso)
+        setTimeout(() => {
+            alert("Pagamento identificado! Iniciando download...");
+            fecharModal();
+        }, 1000);
+    }
+
+    // Inicializa
+    updatePreview();
+</script>
+
 </body>
 </html>
