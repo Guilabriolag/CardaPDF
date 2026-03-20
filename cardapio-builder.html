@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Cardápio Builder — Vitorelli</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0d0d0f;
+  --panel: #141417;
+  --card: #1a1a1f;
+  --border: #2a2a32;
+  --border2: #222228;
+  --accent: #ff4040;
+  --gold: #f0b429;
+  --green: #22c55e;
+  --blue: #3b82f6;
+  --text: #f0f0f5;
+  --muted: #6b6b7a;
+  --muted2: #9595a8;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { height:100%; overflow:hidden; }
+body { background:var(--bg); font-family:var(--font); color:var(--text); display:flex; flex-direction:column; }
+
+/* ── TOP BAR ── */
+.topbar {
+  height: 56px; min-height:56px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 20px; gap: 16px; z-index: 100;
+}
+.topbar-logo {
+  font-size: .85rem; font-weight: 900; letter-spacing: 3px;
+  color: var(--accent); flex-shrink: 0;
+}
+.topbar-logo span { color: var(--muted2); font-weight:400; letter-spacing:1px; font-size:.72rem; }
+.topbar-sep { flex:1; }
+.topbar-tabs { display:flex; gap:4px; }
+.tab-btn {
+  padding: 7px 14px; border-radius: 8px; border: 1px solid transparent;
+  background: none; color: var(--muted2); font-family: var(--font);
+  font-size: .78rem; font-weight: 700; cursor: pointer; letter-spacing:.8px;
+  transition: all .15s;
+}
+.tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.tab-btn:hover:not(.active) { background: var(--card); color: var(--text); }
+
+.topbar-actions { display:flex; gap:8px; }
+.action-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  font-family: var(--font); font-size: .78rem; font-weight: 800;
+  cursor: pointer; letter-spacing:.6px; transition: all .14s; display:flex; align-items:center; gap:6px;
+}
+.action-btn:active { transform:scale(.95); }
+.btn-download { background: var(--blue); color: #fff; }
+.btn-pdf      { background: var(--accent); color: #fff; }
+.btn-save     { background: var(--card); color: var(--gold); border: 1px solid var(--border); }
+
+/* ── MAIN LAYOUT ── */
+.workspace {
+  flex: 1; display: flex; overflow: hidden;
+}
+
+/* ── LEFT PANEL — EDITOR ── */
+.editor-panel {
+  width: 440px; min-width: 340px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.editor-sections { display:flex; border-bottom:1px solid var(--border); }
+.esec-btn {
+  flex:1; padding:11px 6px; background:none; border:none;
+  font-family:var(--font); font-size:.72rem; font-weight:700;
+  color:var(--muted); cursor:pointer; letter-spacing:.5px;
+  border-bottom: 2px solid transparent; transition:all .15s;
+}
+.esec-btn.active { color:var(--text); border-bottom-color:var(--accent); }
+.editor-body {
+  flex:1; overflow-y:auto; padding:16px;
+}
+.editor-body::-webkit-scrollbar { width:4px; }
+.editor-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+/* ── FIELD GROUPS ── */
+.field-group { margin-bottom: 20px; }
+.field-label {
+  font-size:.68rem; font-weight:700; letter-spacing:1.5px;
+  color:var(--muted); text-transform:uppercase; margin-bottom:7px; display:block;
+}
+.field-input {
+  width:100%; padding:11px 13px; background:var(--card);
+  border:1px solid var(--border); border-radius:8px;
+  color:var(--text); font-family:var(--font); font-size:.9rem;
+  outline:none; transition:border-color .15s;
+}
+.field-input:focus { border-color:var(--accent); }
+.field-input::placeholder { color:var(--muted); }
+.field-row { display:flex; gap:10px; }
+.field-row .field-group { flex:1; }
+
+/* ── HORARIO ── */
+.dias-grid { display:flex; gap:6px; flex-wrap:wrap; }
+.dia-btn {
+  width:38px; height:38px; border-radius:8px;
+  border:1px solid var(--border); background:var(--card);
+  color:var(--muted); font-family:var(--font); font-size:.72rem;
+  font-weight:700; cursor:pointer; transition:all .15s; letter-spacing:.5px;
+}
+.dia-btn.fechado { background:rgba(255,64,64,.15); border-color:rgba(255,64,64,.4); color:var(--accent); }
+
+/* ── BAIRROS ── */
+.bairro-item {
+  display:flex; gap:8px; align-items:center; margin-bottom:8px;
+}
+.bairro-item input { flex:1; }
+.bairro-item .taxa-inp { width:75px; }
+.del-btn {
+  width:32px; height:32px; border-radius:7px; border:1px solid var(--border);
+  background:var(--card); color:var(--muted); cursor:pointer; font-size:.9rem;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  transition:all .14s;
+}
+.del-btn:hover { background:rgba(255,64,64,.15); color:var(--accent); border-color:rgba(255,64,64,.35); }
+.add-row-btn {
+  width:100%; padding:10px; border-radius:8px; border:1px dashed var(--border);
+  background:none; color:var(--muted); cursor:pointer; font-family:var(--font);
+  font-size:.8rem; font-weight:600; transition:all .14s; margin-top:4px;
+}
+.add-row-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(255,64,64,.05); }
+
+/* ── SABORES ── */
+.sabor-item {
+  background: var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:12px; margin-bottom:10px;
+  position:relative;
+}
+.sabor-header {
+  display:flex; align-items:center; gap:8px; margin-bottom:10px;
+}
+.sabor-nome-inp { flex:1; font-weight:700; }
+.sabor-badges { display:flex; gap:6px; }
+.badge-toggle {
+  padding: 4px 10px; border-radius:6px; border:1px solid var(--border);
+  background:none; color:var(--muted); font-size:.65rem; font-weight:700;
+  cursor:pointer; font-family:var(--font); letter-spacing:.6px; transition:all .15s;
+}
+.badge-toggle.on-novo { background:rgba(240,180,41,.15); border-color:rgba(240,180,41,.4); color:var(--gold); }
+.badge-toggle.on-inativo { background:rgba(107,107,122,.15); border-color:rgba(107,107,122,.35); color:var(--muted2); }
+.sabor-delete {
+  position:absolute; top:10px; right:10px;
+  width:26px; height:26px; border-radius:6px; border:1px solid var(--border);
+  background:none; color:var(--muted); cursor:pointer; font-size:.8rem;
+  display:flex; align-items:center; justify-content:center; transition:all .14s;
+}
+.sabor-delete:hover { background:rgba(255,64,64,.15); color:var(--accent); border-color:rgba(255,64,64,.35); }
+.sabor-desc-inp { font-size:.82rem; resize:none; height:50px; margin-bottom:8px; }
+.preco-row { display:flex; gap:8px; }
+.preco-row .field-group { flex:1; margin-bottom:0; }
+
+/* ── BEBIDAS ── */
+.bebida-item {
+  display:grid; grid-template-columns:1fr 1fr 80px 32px;
+  gap:8px; align-items:center; margin-bottom:8px;
+}
+
+/* ── DIVIDER ── */
+.section-divider {
+  font-size:.68rem; font-weight:700; letter-spacing:2px;
+  color:var(--muted); text-transform:uppercase;
+  padding:14px 0 8px; display:flex; align-items:center; gap:10px;
+}
+.section-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ── RIGHT PANEL — PREVIEW ── */
+.preview-panel {
+  flex: 1; background: #1c1c20;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.preview-bar {
+  padding: 10px 18px; background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.preview-bar-label {
+  font-size:.7rem; font-weight:700; letter-spacing:1.5px;
+  color:var(--muted); text-transform:uppercase;
+}
+.preview-bar-dots { display:flex; gap:6px; }
+.dot-r { width:11px; height:11px; border-radius:50%; background:#ff5f57; }
+.dot-y { width:11px; height:11px; border-radius:50%; background:#febc2e; }
+.dot-g { width:11px; height:11px; border-radius:50%; background:#28c840; }
+.preview-wrap {
+  flex:1; overflow:auto; padding:20px;
+  display:flex; justify-content:center;
+}
+.preview-frame {
+  width: 390px; min-height: 844px; height: fit-content;
+  background: #080808;
+  border-radius: 36px;
+  overflow: hidden;
+  border: 8px solid #2a2a2a;
+  box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* INNER CARDÁPIO (preview copy of the original style) */
+#cardapio-preview {
+  font-family: 'Segoe UI', sans-serif;
+  background: #080808; color: #fff;
+  min-height: 100%; overflow:auto;
+}
+#cardapio-preview header {
+  text-align:center; padding:30px 16px 18px; position:relative;
+}
+#cardapio-preview header::after {
+  content:''; position:absolute; bottom:0; left:50%;
+  transform:translateX(-50%); width:50px; height:2px;
+  background:linear-gradient(90deg,transparent,#ff3c3c,transparent);
+}
+.pv-logo-wrap {
+  width:60px; height:60px; margin:0 auto 10px;
+  background:radial-gradient(circle,#2a0000,#080808);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 24px rgba(255,60,60,.3); border:1px solid rgba(255,60,60,.2);
+}
+#cardapio-preview h1 {
+  font-size:1.7rem; font-weight:900; letter-spacing:6px;
+  background:linear-gradient(160deg,#fff 0%,#aaa 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+#cardapio-preview .tagline {
+  font-size:.65rem; letter-spacing:4px; color:#c5a059; margin-top:4px;
+}
+#cardapio-preview .badge {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 14px; border-radius:20px; margin-top:10px;
+  font-size:.68rem; font-weight:700; letter-spacing:1px;
+}
+#cardapio-preview .badge.aberto { background:rgba(37,211,102,.1); border:1px solid rgba(37,211,102,.3); color:#25d366; }
+#cardapio-preview .badge.fechado { background:rgba(255,60,60,.1); border:1px solid rgba(255,60,60,.3); color:#ff8080; }
+#cardapio-preview .bdot { width:6px; height:6px; border-radius:50%; }
+#cardapio-preview .badge.aberto .bdot { background:#25d366; }
+#cardapio-preview .badge.fechado .bdot { background:#ff8080; }
+
+.pv-nav { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:14px 12px 6px; }
+.pv-nav-btn {
+  padding:13px 6px; border-radius:12px; border:none;
+  background:#141414; color:#888; font-size:.7rem; font-weight:800; letter-spacing:1px;
+  cursor:pointer; transition:all .15s; font-family:'Segoe UI',sans-serif;
+}
+.pv-nav-btn.full { grid-column:1/-1; }
+.pv-nav-btn.active { background:#ff3c3c; color:#fff; }
+
+.pv-cards { padding:6px 12px 80px; }
+.pv-card {
+  background:#141414; border-radius:12px; padding:14px;
+  margin-bottom:10px; border:1px solid #2a2a2a; position:relative; overflow:hidden;
+}
+.pv-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,60,60,.2),transparent);
+}
+.pv-tag-novo {
+  position:absolute; top:10px; right:-26px;
+  background:#c5a059; color:#000; font-size:.52rem; font-weight:900;
+  padding:3px 30px; transform:rotate(45deg); letter-spacing:1px;
+}
+.pv-card h3 { color:#ff3c3c; font-size:.9rem; margin-bottom:4px; text-transform:uppercase; padding-right:28px; }
+.pv-card p { color:#666; font-size:.73rem; margin-bottom:10px; line-height:1.4; }
+.pv-price-row { display:flex; justify-content:space-between; align-items:center; }
+.pv-preco { font-weight:900; font-size:1.1rem; color:#fff; }
+.pv-btn { background:#ff3c3c; color:#fff; border:none; padding:8px 14px; border-radius:8px; font-size:.7rem; font-weight:900; }
+
+.pv-bairro-card {
+  background:#141414; border:1px solid #2a2a2a; border-radius:8px;
+  padding:12px 14px; margin:0 12px 8px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.pv-bairro-nome { font-weight:700; font-size:.85rem; }
+.pv-bairro-taxa { font-weight:900; color:#c5a059; font-size:.9rem; }
+
+/* ── PDF MODAL ── */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.85);
+  display:none; justify-content:center; align-items:center;
+  z-index:999; backdrop-filter:blur(8px);
+}
+.modal-overlay.show { display:flex; }
+.modal-box {
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:16px; padding:28px; width:90%; max-width:420px;
+  text-align:center;
+}
+.modal-box h3 { font-size:1.1rem; font-weight:900; letter-spacing:1px; margin-bottom:8px; }
+.modal-box p { color:var(--muted2); font-size:.83rem; line-height:1.6; margin-bottom:20px; }
+.modal-actions { display:flex; gap:10px; }
+.modal-actions button { flex:1; }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+  background:#1a1a1f; border:1px solid var(--border); border-radius:10px;
+  padding:10px 20px; font-size:.82rem; font-weight:600; color:var(--text);
+  z-index:2000; transition:transform .3s cubic-bezier(.32,.72,0,1), opacity .3s;
+  opacity:0; white-space:nowrap; pointer-events:none;
+}
+.toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+.toast.success { border-color:rgba(34,197,94,.4); color:var(--green); }
+
+/* ── SCROLLBAR ── */
+.editor-body::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:#000; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width:900px) {
+  .editor-panel { width:100%; min-width:unset; }
+  .preview-panel { display:none; }
+  html,body { overflow:auto; }
+  .workspace { flex-direction:column; overflow:auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">CARDÁPIO<br><span>BUILDER</span></div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-tabs">
+    <button class="tab-btn active" onclick="switchTab('info')">🏪 Info</button>
+    <button class="tab-btn" onclick="switchTab('horario')">⏰ Horário</button>
+    <button class="tab-btn" onclick="switchTab('bairros')">📍 Bairros</button>
+    <button class="tab-btn" onclick="switchTab('sabores')">🍕 Sabores</button>
+    <button class="tab-btn" onclick="switchTab('bebidas')">🥤 Bebidas</button>
+  </div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-actions">
+    <button class="action-btn btn-save" onclick="salvarLocal()">💾 Salvar</button>
+    <button class="action-btn btn-download" onclick="downloadArquivos()">⬇ Download ZIP</button>
+    <button class="action-btn btn-pdf" onclick="abrirModalPDF()">📄 Gerar PDF</button>
+  </div>
+</div>
+
+<div class="workspace">
+
+  <!-- EDITOR PANEL -->
+  <div class="editor-panel">
+    <div class="editor-body" id="editor-body">
+      <!-- Conteúdo injetado por JS -->
+    </div>
+  </div>
+
+  <!-- PREVIEW PANEL -->
+  <div class="preview-panel">
+    <div class="preview-bar">
+      <div class="preview-bar-dots">
+        <div class="dot-r"></div>
+        <div class="dot-y"></div>
+        <div class="dot-g"></div>
+      </div>
+      <div class="preview-bar-label">Pré-visualização em tempo real</div>
+    </div>
+    <div class="preview-wrap">
+      <div class="preview-frame">
+        <div id="cardapio-preview"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL PDF -->
+<div class="modal-overlay" id="modalPDF">
+  <div class="modal-box">
+    <h3>📄 GERAR PDF DO CARDÁPIO</h3>
+    <p>O PDF será gerado com todos os sabores, preços e informações atuais. Perfeito para imprimir ou compartilhar!</p>
+    <div class="modal-actions">
+      <button class="action-btn" style="background:var(--card);border:1px solid var(--border);color:var(--muted2);" onclick="fecharModalPDF()">Cancelar</button>
+      <button class="action-btn btn-pdf" onclick="gerarPDF()">📄 Gerar e Baixar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+
+// ═══════════════════════════════════════
+// ESTADO INICIAL (baseado no config.js da Vitorelli)
+// ═══════════════════════════════════════
+var estado = {
+  pizzaria: {
+    nome: "VITORELLI",
+    subtitulo: "Pizzaria Artesanal",
+    whatsapp: "5511993407322",
+    instagram: ""
+  },
+  horario: {
+    diasFechados: [1],
+    abreHora: 18, abreMinuto: 0,
+    fechaHora: 23, fechaMinuto: 30
+  },
+  bairros: [
+    { nome: "Centro", taxa: 3 },
+    { nome: "Chácara Boavista", taxa: 3 },
+    { nome: "Jd. Bom Jesus", taxa: 3 },
+    { nome: "Parque das Avencas", taxa: 3 },
+    { nome: "Vila Nova", taxa: 3 },
+    { nome: "Morro Branco", taxa: 4 },
+    { nome: "Paiol / KM 50", taxa: 7 },
+    { nome: "Green Hills", taxa: 10 }
+  ],
+  bebidas: [
+    { nome: "Coca-Cola 2L", descricao: "Refrigerante", preco: 18 },
+    { nome: "Coca-Cola Zero 2L", descricao: "Refrigerante", preco: 18 },
+    { nome: "Guaraná Kuat 2L", descricao: "Refrigerante", preco: 12 },
+    { nome: "HEINEKEN (Lata)", descricao: "Cerveja", preco: 10 }
+  ],
+  sabores: [
+    { nome:"Mussarela Especial", descricao:"Molho, Mussarela, Tomate Seco, Parmesão e Pimenta Calabresa", grande:43, broto:33 },
+    { nome:"Mussarela", descricao:"Molho, Mussarela, Tomate, Azeitona e Orégano", grande:39, broto:29 },
+    { nome:"Calabresa 1", descricao:"Molho, Calabresa, Cebola, Azeitona e Orégano", grande:39, broto:29 },
+    { nome:"Calabresa 2", descricao:"Molho, Mussarela, Calabresa, Cebola, Azeitona e Orégano", grande:44, broto:34 },
+    { nome:"Quatro Queijos", descricao:"Molho, Mussarela, Parmesão, Provolone e Gorgonzola", grande:48, broto:38 },
+    { nome:"Frango Catupiry", descricao:"Molho, Frango e Catupiry", grande:47, broto:37 },
+    { nome:"Peperonni 2", descricao:"Molho, Mussarela, Peperonni, Catupiry, Azeitona", grande:55, broto:45, novo:true },
+    { nome:"Portuguesa", descricao:"Molho, Mussarela, Presunto, Ovo, Ervilha, Tomate, Cebola e Azeitona", grande:50, broto:40 },
+    { nome:"Banana", descricao:"Banana, Açúcar, Doce de Leite e Canela", grande:41, broto:31 },
+    { nome:"Ovomaltine", descricao:"Ovomaltine, Ovomaltine Rocks", grande:55, broto:45, novo:true }
+  ]
+};
+
+// Carrega do localStorage se existir
+var salvo = localStorage.getItem('cardapio_builder_v1');
+if (salvo) { try { estado = JSON.parse(salvo); } catch(e){} }
+
+var tabAtual = 'info';
+var pvCategoria = 'pizza';
+
+// ═══════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════
+function switchTab(tab) {
+  tabAtual = tab;
+  document.querySelectorAll('.tab-btn').forEach(function(b,i) {
+    b.classList.toggle('active', ['info','horario','bairros','sabores','bebidas'][i] === tab);
+  });
+  renderEditor();
+}
+
+// ═══════════════════════════════════════
+// RENDER EDITOR
+// ═══════════════════════════════════════
+function renderEditor() {
+  var body = document.getElementById('editor-body');
+  if (tabAtual === 'info')    body.innerHTML = renderInfo();
+  if (tabAtual === 'horario') body.innerHTML = renderHorario();
+  if (tabAtual === 'bairros') body.innerHTML = renderBairros();
+  if (tabAtual === 'sabores') body.innerHTML = renderSabores();
+  if (tabAtual === 'bebidas') body.innerHTML = renderBebidas();
+  attachEvents();
+}
+
+function renderInfo() {
+  var p = estado.pizzaria;
+  return '<div class="field-group"><label class="field-label">Nome da Pizzaria</label>' +
+    '<input class="field-input" data-path="pizzaria.nome" value="'+esc(p.nome)+'" placeholder="Ex: VITORELLI"></div>' +
+    '<div class="field-group"><label class="field-label">Subtítulo / Slogan</label>' +
+    '<input class="field-input" data-path="pizzaria.subtitulo" value="'+esc(p.subtitulo)+'" placeholder="Ex: Pizzaria Artesanal"></div>' +
+    '<div class="field-group"><label class="field-label">WhatsApp (só números com DDI)</label>' +
+    '<input class="field-input" data-path="pizzaria.whatsapp" value="'+esc(p.whatsapp)+'" placeholder="5511999999999"></div>' +
+    '<div class="field-group"><label class="field-label">Instagram (opcional)</label>' +
+    '<input class="field-input" data-path="pizzaria.instagram" value="'+esc(p.instagram)+'" placeholder="@suapizzaria"></div>';
+}
+
+function renderHorario() {
+  var h = estado.horario;
+  var dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  var btnsDias = dias.map(function(d,i) {
+    var fc = h.diasFechados.indexOf(i) !== -1 ? ' fechado' : '';
+    return '<button class="dia-btn'+fc+'" data-dia="'+i+'" onclick="toggleDia('+i+')">'+d+'</button>';
+  }).join('');
+  return '<div class="section-divider">Dias Fechados</div>' +
+    '<div class="field-group"><label class="field-label">Clique para marcar como FECHADO</label>' +
+    '<div class="dias-grid">'+btnsDias+'</div></div>' +
+    '<div class="section-divider">Horário</div>' +
+    '<div class="field-row">' +
+      '<div class="field-group"><label class="field-label">Abre (hora)</label>' +
+      '<input class="field-input" type="number" min="0" max="23" data-path="horario.abreHora" value="'+h.abreHora+'"></div>' +
+      '<div class="field-group"><label class="field-label">Abre (minuto)</label>' +
+      '<input class="field-input" type="number" min="0" max="59" data-path="horario.abreMinuto" value="'+h.abreMinuto+'"></div>' +
+    '</div>' +
+    '<div class="field-row">' +
+      '<div class="field-group"><label class="field-label">Fecha (hora)</label>' +
+      '<input class="field-input" type="number" min="0" max="23" data-path="horario.fechaHora" value="'+h.fechaHora+'"></div>' +
+      '<div class="field-group"><label class="field-label">Fecha (minuto)</label>' +
+      '<input class="field-input" type="number" min="0" max="59" data-path="horario.fechaMinuto" value="'+h.fechaMinuto+'"></div>' +
+    '</div>';
+}
+
+function renderBairros() {
+  var rows = estado.bairros.map(function(b,i) {
+    return '<div class="bairro-item">' +
+      '<input class="field-input" data-bairro="'+i+'" data-field="nome" value="'+esc(b.nome)+'" placeholder="Nome do bairro">' +
+      '<input class="field-input taxa-inp" data-bairro="'+i+'" data-field="taxa" type="number" value="'+b.taxa+'" placeholder="R$">' +
+      '<button class="del-btn" onclick="delBairro('+i+')">✕</button>' +
+    '</div>';
+  }).join('');
+  return '<div class="section-divider">Bairros & Taxas</div>' + rows +
+    '<button class="add-row-btn" onclick="addBairro()">+ Adicionar bairro</button>';
+}
+
+function renderSabores() {
+  var html = '<div class="section-divider">Sabores <span style="margin-left:auto;font-size:.7rem;font-weight:400;color:var(--muted)">'+estado.sabores.length+' sabores</span></div>';
+  estado.sabores.forEach(function(s,i) {
+    var isNovo = s.novo ? ' on-novo' : '';
+    var isInativo = s.ativo === false ? ' on-inativo' : '';
+    html += '<div class="sabor-item" id="sabor-'+i+'">' +
+      '<button class="sabor-delete" onclick="delSabor('+i+')">✕</button>' +
+      '<div class="sabor-header">' +
+        '<input class="field-input sabor-nome-inp" data-sabor="'+i+'" data-field="nome" value="'+esc(s.nome)+'" placeholder="Nome do sabor">' +
+        '<div class="sabor-badges">' +
+          '<button class="badge-toggle'+isNovo+'" data-sabor="'+i+'" data-field="novo" onclick="toggleSaborBadge('+i+',\'novo\')">NOVO</button>' +
+          '<button class="badge-toggle'+isInativo+'" data-sabor="'+i+'" data-field="ativo" onclick="toggleSaborBadge('+i+',\'ativo\')">OFF</button>' +
+        '</div>' +
+      '</div>' +
+      '<textarea class="field-input sabor-desc-inp" data-sabor="'+i+'" data-field="descricao" placeholder="Ingredientes...">'+esc(s.descricao)+'</textarea>' +
+      '<div class="preco-row">' +
+        '<div class="field-group"><label class="field-label">Grande (R$)</label>' +
+        '<input class="field-input" type="number" data-sabor="'+i+'" data-field="grande" value="'+s.grande+'"></div>' +
+        '<div class="field-group"><label class="field-label">Broto/Calzone (R$)</label>' +
+        '<input class="field-input" type="number" data-sabor="'+i+'" data-field="broto" value="'+s.broto+'"></div>' +
+      '</div>' +
+    '</div>';
+  });
+  html += '<button class="add-row-btn" onclick="addSabor()">+ Novo sabor</button>';
+  return html;
+}
+
+function renderBebidas() {
+  var header = '<div class="section-divider">Bebidas</div>' +
+    '<div class="bebida-item" style="margin-bottom:6px">' +
+      '<span class="field-label" style="margin:0">Nome</span>' +
+      '<span class="field-label" style="margin:0">Categoria</span>' +
+      '<span class="field-label" style="margin:0">R$</span>' +
+      '<span></span>' +
+    '</div>';
+  var rows = estado.bebidas.map(function(b,i) {
+    return '<div class="bebida-item">' +
+      '<input class="field-input" data-beb="'+i+'" data-field="nome" value="'+esc(b.nome)+'" placeholder="Nome">' +
+      '<input class="field-input" data-beb="'+i+'" data-field="descricao" value="'+esc(b.descricao)+'" placeholder="Categoria">' +
+      '<input class="field-input" type="number" data-beb="'+i+'" data-field="preco" value="'+b.preco+'">' +
+      '<button class="del-btn" onclick="delBebida('+i+')">✕</button>' +
+    '</div>';
+  }).join('');
+  return header + rows + '<button class="add-row-btn" onclick="addBebida()">+ Adicionar bebida</button>';
+}
+
+// ═══════════════════════════════════════
+// ATTACH EVENTS (inputs → estado)
+// ═══════════════════════════════════════
+function attachEvents() {
+  document.querySelectorAll('[data-path]').forEach(function(el) {
+    el.addEventListener('input', function() {
+      var parts = el.getAttribute('data-path').split('.');
+      var obj = estado;
+      for (var i=0; i<parts.length-1; i++) obj = obj[parts[i]];
+      obj[parts[parts.length-1]] = el.type === 'number' ? Number(el.value) : el.value;
+      renderPreview();
+    });
+  });
+  document.querySelectorAll('[data-bairro]').forEach(function(el) {
+    el.addEventListener('input', function() {
+      var i = Number(el.getAttribute('data-bairro'));
+      var f = el.getAttribute('data-field');
+      estado.bairros[i][f] = el.type === 'number' ? Number(el.value) : el.value;
+      renderPreview();
+    });
+  });
+  document.querySelectorAll('[data-sabor]').forEach(function(el) {
+    el.addEventListener('input', function() {
+      var i = Number(el.getAttribute('data-sabor'));
+      var f = el.getAttribute('data-field');
+      estado.sabores[i][f] = el.type === 'number' ? Number(el.value) : el.value;
+      renderPreview();
+    });
+  });
+  document.querySelectorAll('[data-beb]').forEach(function(el) {
+    el.addEventListener('input', function() {
+      var i = Number(el.getAttribute('data-beb'));
+      var f = el.getAttribute('data-field');
+      estado.bebidas[i][f] = el.type === 'number' ? Number(el.value) : el.value;
+      renderPreview();
+    });
+  });
+}
+
+function toggleDia(d) {
+  var idx = estado.horario.diasFechados.indexOf(d);
+  if (idx === -1) estado.horario.diasFechados.push(d);
+  else estado.horario.diasFechados.splice(idx,1);
+  renderEditor(); renderPreview();
+}
+
+function toggleSaborBadge(i, field) {
+  if (field === 'novo') {
+    estado.sabores[i].novo = !estado.sabores[i].novo;
+  } else {
+    estado.sabores[i].ativo = estado.sabores[i].ativo === false ? true : false;
+  }
+  renderEditor(); renderPreview();
+}
+
+function addBairro() { estado.bairros.push({ nome:'', taxa:0 }); renderEditor(); renderPreview(); }
+function delBairro(i) { estado.bairros.splice(i,1); renderEditor(); renderPreview(); }
+function addSabor() { estado.sabores.push({ nome:'Novo Sabor', descricao:'Ingredientes...', grande:40, broto:30 }); renderEditor(); renderPreview(); }
+function delSabor(i) { if (!confirm('Remover este sabor?')) return; estado.sabores.splice(i,1); renderEditor(); renderPreview(); }
+function addBebida() { estado.bebidas.push({ nome:'', descricao:'', preco:10 }); renderEditor(); renderPreview(); }
+function delBebida(i) { estado.bebidas.splice(i,1); renderEditor(); renderPreview(); }
+
+function esc(s) { return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+// ═══════════════════════════════════════
+// PREVIEW
+// ═══════════════════════════════════════
+function estaAberto() {
+  var agora = new Date(), dia = agora.getDay();
+  var min = agora.getHours()*60+agora.getMinutes();
+  var h = estado.horario;
+  if (h.diasFechados.indexOf(dia) !== -1) return false;
+  return min >= h.abreHora*60+h.abreMinuto && min <= h.fechaHora*60+h.fechaMinuto;
+}
+
+function renderPreview() {
+  var p = estado.pizzaria;
+  var aberto = estaAberto();
+  var badgeClass = aberto ? 'aberto' : 'fechado';
+  var badgeTxt = aberto ? 'ABERTO AGORA' : 'FECHADO';
+
+  var navBtns = ['pizza','broto','calzone','bebidas'].map(function(c) {
+    return '<button class="pv-nav-btn'+(pvCategoria===c?' active':'')+'" onclick="pvSel(\''+c+'\')">' +
+      ({pizza:'🍕 PIZZAS',broto:'🔥 BROTOS',calzone:'🥙 CALZONES',bebidas:'🥤 BEBIDAS'}[c]) + '</button>';
+  }).join('');
+  navBtns += '<button class="pv-nav-btn full'+(pvCategoria==='bairros'?' active':'')+'" onclick="pvSel(\'bairros\')">🚗 BAIRROS & DELIVERY</button>';
+
+  var conteudo = '';
+  if (pvCategoria === 'bairros') {
+    conteudo = estado.bairros.map(function(b) {
+      return '<div class="pv-bairro-card"><span class="pv-bairro-nome">📍 '+b.nome+'</span><span class="pv-bairro-taxa">+ R$ '+Number(b.taxa).toFixed(2)+'</span></div>';
+    }).join('');
+  } else if (pvCategoria === 'bebidas') {
+    conteudo = '<div class="pv-cards">'+estado.bebidas.map(function(b) {
+      return '<div class="pv-card"><h3>'+b.nome+'</h3><p>'+b.descricao+'</p>'+
+        '<div class="pv-price-row"><span class="pv-preco">R$ '+Number(b.preco).toFixed(2)+'</span>'+
+        '<button class="pv-btn">ADICIONAR</button></div></div>';
+    }).join('')+'</div>';
+  } else {
+    var campo = pvCategoria === 'pizza' ? 'grande' : 'broto';
+    var ativos = estado.sabores.filter(function(s){ return s.ativo !== false; });
+    conteudo = '<div class="pv-cards">'+ativos.map(function(s) {
+      var tag = s.novo ? '<div class="pv-tag-novo">NOVIDADE</div>' : '';
+      return '<div class="pv-card">'+tag+'<h3>'+s.nome+'</h3><p>'+s.descricao+'</p>'+
+        '<div class="pv-price-row"><span class="pv-preco">R$ '+Number(s[campo]).toFixed(2)+'</span>'+
+        '<button class="pv-btn">ADICIONAR</button></div></div>';
+    }).join('')+'</div>';
+  }
+
+  document.getElementById('cardapio-preview').innerHTML =
+    '<header>' +
+      '<div class="pv-logo-wrap"><svg viewBox="0 0 80 80" width="40"><circle cx="40" cy="40" r="36" fill="#1a0000" stroke="#ff3c3c" stroke-width="2"/><text x="40" y="37" text-anchor="middle" fill="#ff3c3c" font-family="Arial" font-weight="900" font-size="16" letter-spacing="1">VIT</text><text x="40" y="50" text-anchor="middle" fill="#c5a059" font-family="Arial" font-size="7" letter-spacing="2">PIZZA</text></svg></div>' +
+      '<h1>'+p.nome+'</h1>' +
+      '<p class="tagline">'+p.subtitulo+'</p>' +
+      '<div class="badge '+badgeClass+'"><span class="bdot"></span> '+badgeTxt+'</div>' +
+    '</header>' +
+    '<div class="pv-nav">'+navBtns+'</div>' +
+    conteudo;
+}
+
+function pvSel(cat) {
+  pvCategoria = cat;
+  renderPreview();
+}
+
+// ═══════════════════════════════════════
+// SALVAR LOCAL
+// ═══════════════════════════════════════
+function salvarLocal() {
+  localStorage.setItem('cardapio_builder_v1', JSON.stringify(estado));
+  toast('💾 Salvo no navegador!', 'success');
+}
+
+// ═══════════════════════════════════════
+// DOWNLOAD ZIP
+// ═══════════════════════════════════════
+function downloadArquivos() {
+  var configJS = gerarConfigJS();
+
+  // Fetch original files
+  Promise.all([
+    fetch('https://raw.githubusercontent.com/vitorelli/cardapio/main/index.html').catch(function(){ return null; })
+  ]).then(function() {
+    // Gera ZIP com config.js gerado e instrução
+    var zip = new JSZip();
+    zip.file('config.js', configJS);
+    zip.file('LEIA-ME.txt',
+      'Cardápio Gerado pelo Builder\n\n' +
+      '1. Substitua o config.js no seu projeto por este arquivo.\n' +
+      '2. Os outros arquivos (index.html, style.css, app.js) permanecem iguais.\n' +
+      '3. Suba para o GitHub Pages e seu cardápio estará atualizado!\n\n' +
+      'Gerado em: ' + new Date().toLocaleString('pt-BR')
+    );
+
+    zip.generateAsync({ type:'blob' }).then(function(blob) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'cardapio_'+estado.pizzaria.nome.toLowerCase().replace(/\s/g,'_')+'.zip';
+      a.click();
+      toast('⬇ Download iniciado!', 'success');
+    });
+  });
+}
+
+function gerarConfigJS() {
+  var p = estado.pizzaria;
+  var h = estado.horario;
+  var out = '// Gerado pelo Cardápio Builder\n// ' + new Date().toLocaleString('pt-BR') + '\n\nconst CONFIG = {\n\n';
+
+  out += '  pizzaria: {\n';
+  out += '    nome:      "' + p.nome + '",\n';
+  out += '    subtitulo: "' + p.subtitulo + '",\n';
+  out += '    whatsapp:  "' + p.whatsapp + '",\n';
+  out += '    instagram: "' + (p.instagram||'') + '",\n';
+  out += '  },\n\n';
+
+  out += '  horario: {\n';
+  out += '    diasFechados: [' + h.diasFechados.join(',') + '],\n';
+  out += '    abreHora:    ' + h.abreHora + ',\n';
+  out += '    abreMinuto:  ' + h.abreMinuto + ',\n';
+  out += '    fechaHora:   ' + h.fechaHora + ',\n';
+  out += '    fechaMinuto: ' + h.fechaMinuto + ',\n';
+  out += '  },\n\n';
+
+  out += '  bairros: [\n';
+  estado.bairros.forEach(function(b) {
+    out += '    { nome: "' + b.nome + '", taxa: ' + b.taxa + ' },\n';
+  });
+  out += '  ],\n\n';
+
+  out += '  bebidas: [\n';
+  estado.bebidas.forEach(function(b) {
+    out += '    { nome: "' + b.nome + '", descricao: "' + b.descricao + '", preco: ' + b.preco + ' },\n';
+  });
+  out += '  ],\n\n';
+
+  out += '  sabores: [\n';
+  estado.sabores.forEach(function(s) {
+    out += '    {\n';
+    out += '      nome:     "' + s.nome + '",\n';
+    out += '      descricao:"' + s.descricao + '",\n';
+    out += '      grande:   ' + s.grande + ',\n';
+    out += '      broto:    ' + s.broto + ',\n';
+    if (s.novo) out += '      novo:     true,\n';
+    if (s.ativo === false) out += '      ativo:    false,\n';
+    out += '    },\n';
+  });
+  out += '  ],\n\n};\n';
+  return out;
+}
+
+// ═══════════════════════════════════════
+// GERAR PDF
+// ═══════════════════════════════════════
+function abrirModalPDF() {
+  document.getElementById('modalPDF').classList.add('show');
+}
+function fecharModalPDF() {
+  document.getElementById('modalPDF').classList.remove('show');
+}
+
+function gerarPDF() {
+  fecharModalPDF();
+  toast('📄 Gerando PDF...', '');
+
+  var p = estado.pizzaria;
+  var ativos = estado.sabores.filter(function(s){ return s.ativo !== false; });
+
+  // Gera HTML para impressão
+  var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+    '<title>Cardápio ' + p.nome + '</title>' +
+    '<style>' +
+    'body{font-family:"Segoe UI",Arial,sans-serif;background:#fff;color:#111;margin:0;padding:0;}' +
+    '.cover{background:#080808;color:#fff;text-align:center;padding:60px 40px;}' +
+    '.cover h1{font-size:3.5rem;font-weight:900;letter-spacing:10px;color:#fff;margin:0;}' +
+    '.cover .sub{font-size:.9rem;letter-spacing:5px;color:#c5a059;margin-top:8px;}' +
+    '.cover .whats{font-size:.85rem;color:#888;margin-top:16px;}' +
+    '.section-title{background:#ff3c3c;color:#fff;padding:14px 24px;font-size:1.1rem;font-weight:900;letter-spacing:3px;page-break-before:auto;}' +
+    '.grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}' +
+    '.item{border-bottom:1px solid #eee;border-right:1px solid #eee;padding:14px 18px;}' +
+    '.item h3{font-size:.88rem;font-weight:800;color:#cc0000;text-transform:uppercase;margin-bottom:3px;}' +
+    '.item p{font-size:.72rem;color:#777;margin-bottom:8px;line-height:1.4;}' +
+    '.item .prices{display:flex;gap:16px;}' +
+    '.price-tag{font-size:.82rem;}' +
+    '.price-tag strong{font-weight:900;font-size:1rem;}' +
+    '.price-label{font-size:.65rem;color:#aaa;display:block;}' +
+    '.novo-badge{background:#f0b429;color:#000;font-size:.55rem;font-weight:900;padding:2px 8px;border-radius:3px;margin-left:6px;vertical-align:middle;}' +
+    '.bairros-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;}' +
+    '.bairro-row{border-bottom:1px solid #eee;border-right:1px solid #eee;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;}' +
+    '.bairro-row span:last-child{font-weight:900;color:#cc7000;}' +
+    '.beb-row{border-bottom:1px solid #eee;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;}' +
+    '.beb-row div:first-child{font-weight:700;}' +
+    '.beb-row small{color:#888;font-size:.75rem;}' +
+    '.beb-row span{font-weight:900;color:#cc7000;}' +
+    '.footer{background:#080808;color:#888;text-align:center;padding:24px;font-size:.75rem;}' +
+    '@media print{.section-title{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.cover{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.footer{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}' +
+    '</style></head><body>';
+
+  // CAPA
+  html += '<div class="cover">' +
+    '<h1>' + p.nome + '</h1>' +
+    '<div class="sub">' + p.subtitulo + '</div>' +
+    (p.whatsapp ? '<div class="whats">📱 WhatsApp: ' + p.whatsapp + '</div>' : '') +
+    '</div>';
+
+  // SABORES GRANDES
+  html += '<div class="section-title">🍕 PIZZAS GRANDES</div><div class="grid">';
+  ativos.forEach(function(s) {
+    html += '<div class="item"><h3>' + s.nome + (s.novo ? '<span class="novo-badge">NOVIDADE</span>' : '') + '</h3>' +
+      '<p>' + s.descricao + '</p>' +
+      '<div class="prices"><div class="price-tag"><span class="price-label">GRANDE</span><strong>R$ ' + Number(s.grande).toFixed(2) + '</strong></div></div></div>';
+  });
+  html += '</div>';
+
+  // BROTOS
+  html += '<div class="section-title">🔥 BROTOS & CALZONES</div><div class="grid">';
+  ativos.forEach(function(s) {
+    html += '<div class="item"><h3>' + s.nome + '</h3>' +
+      '<p>' + s.descricao + '</p>' +
+      '<div class="prices"><div class="price-tag"><span class="price-label">BROTO / CALZONE</span><strong>R$ ' + Number(s.broto).toFixed(2) + '</strong></div></div></div>';
+  });
+  html += '</div>';
+
+  // BEBIDAS
+  if (estado.bebidas.length) {
+    html += '<div class="section-title">🥤 BEBIDAS</div>';
+    estado.bebidas.forEach(function(b) {
+      html += '<div class="beb-row"><div>' + b.nome + '<br><small>' + b.descricao + '</small></div><span>R$ ' + Number(b.preco).toFixed(2) + '</span></div>';
+    });
+  }
+
+  // BAIRROS
+  if (estado.bairros.length) {
+    var h2 = estado.horario;
+    html += '<div class="section-title">📍 BAIRROS & DELIVERY</div><div class="bairros-grid">';
+    estado.bairros.forEach(function(b) {
+      html += '<div class="bairro-row"><span>' + b.nome + '</span><span>+ R$ ' + Number(b.taxa).toFixed(2) + '</span></div>';
+    });
+    html += '</div>';
+  }
+
+  html += '<div class="footer">Funcionamento: ' +
+    h2.abreHora+'h–'+h2.fechaHora+'h' +
+    (h2.diasFechados.length ? ' · Fechado: '+h2.diasFechados.map(function(d){return['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][d];}).join(', ') : '') +
+    ' · Cardápio gerado em ' + new Date().toLocaleDateString('pt-BR') + '</div>';
+  html += '</body></html>';
+
+  var blob = new Blob([html], { type:'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var janela = window.open(url, '_blank');
+  if (janela) {
+    setTimeout(function() {
+      janela.focus();
+      janela.print();
+    }, 800);
+    toast('📄 PDF aberto! Use Ctrl+P ou "Imprimir como PDF".', 'success');
+  } else {
+    var a = document.createElement('a');
+    a.href = url; a.download = 'cardapio_' + p.nome + '.html'; a.click();
+    toast('📄 Arquivo HTML salvo! Abra e imprima como PDF.', 'success');
+  }
+}
+
+var h2 = estado.horario; // fallback ref
+
+// ═══════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════
+var toastTimer;
+function toast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type||'');
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.remove('show'); }, 3000);
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+renderEditor();
+renderPreview();
+
+</script>
+</body>
+</html>
