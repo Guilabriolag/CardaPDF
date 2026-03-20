@@ -3,122 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LABRIOLAG - Cardápio Builder Professional</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <title>LABRIOLAG - Cardápio Builder</title>
+    <!-- Bibliotecas Necessárias -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        :root { --accent: #f7931a; --bg: #050505; --card: #121212; --text: #e0e0e0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        :root { --accent: #f7931a; --bg: #0a0a0a; --card: #161616; --text: #f0f0f0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Painel de Edição (Esquerda) */
-        #editor { width: 40%; padding: 20px; overflow-y: auto; border-right: 1px solid #333; }
-        .field-group { background: var(--card); padding: 15px; margin-bottom: 15px; border-radius: 4px; border-left: 4px solid var(--accent); }
-        input, select { width: 100%; padding: 10px; background: #000; color: #fff; border: 1px solid #444; margin-top: 5px; box-sizing: border-box; }
+        /* Painel Lateral */
+        #editor { width: 400px; padding: 25px; overflow-y: auto; border-right: 1px solid #333; background: #0f0f0f; }
+        .field-group { background: var(--card); padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #222; }
+        label { display: block; font-size: 12px; color: var(--accent); text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
+        input { width: 100%; padding: 12px; background: #000; color: #fff; border: 1px solid #333; border-radius: 4px; margin-bottom: 10px; box-sizing: border-box; }
         
-        /* Preview (Direita) */
-        #preview { width: 60%; display: flex; align-items: center; justify-content: center; background: #000; position: relative; }
-        .iphone-frame { width: 320px; height: 640px; border: 12px solid #222; border-radius: 36px; background: #fff; color: #333; overflow-y: auto; position: relative; }
-        
-        /* Botão Flutuante de Exportação */
-        .btn-export { position: fixed; bottom: 20px; right: 20px; background: var(--accent); color: #000; border: none; padding: 15px 30px; font-weight: bold; cursor: pointer; border-radius: 4px; z-index: 100; font-size: 1rem; }
+        .item-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .btn-add { width: 100%; padding: 10px; background: #222; color: #fff; border: 1px dashed #444; cursor: pointer; border-radius: 4px; }
+        .btn-add:hover { background: #333; }
 
-        /* Modal de Pagamento */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; align-items: center; justify-content: center; }
-        .modal-content { background: var(--card); padding: 40px; border: 1px solid var(--accent); text-align: center; max-width: 400px; }
-        .btn-pay { display: block; width: 100%; padding: 15px; margin: 15px 0; border: none; font-weight: bold; text-decoration: none; border-radius: 4px; cursor: pointer; }
-        .btn-mp { background: #009ee3; color: #fff; }
-        .btn-ln { background: var(--accent); color: #000; }
+        /* Preview Mobile */
+        #preview { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; }
+        .iphone-frame { width: 320px; height: 620px; border: 12px solid #222; border-radius: 40px; background: #fff; color: #111; overflow-y: auto; position: relative; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        
+        /* Modal Pay */
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: #1a1a1a; padding: 30px; border-radius: 12px; text-align: center; max-width: 350px; border: 1px solid var(--accent); }
+        .btn-pay { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; }
+        .mp { background: #009ee3; color: white; }
+        .ln { background: var(--accent); color: black; }
+
+        .btn-export { position: fixed; bottom: 30px; right: 30px; background: var(--accent); color: #000; border: none; padding: 18px 35px; font-weight: bold; border-radius: 50px; cursor: pointer; font-size: 16px; box-shadow: 0 10px 20px rgba(247, 147, 26, 0.3); }
     </style>
 </head>
 <body>
 
 <div id="editor">
-    <h2>LABRIOLAG Builder</h2>
-    <p>Configure seu cardápio abaixo. O preview atualiza na hora!</p>
+    <h2 style="color: var(--accent)">Labrio Builder v1</h2>
+    <p style="font-size: 13px; color: #888;">Configure seu cardápio em tempo real.</p>
     
     <div class="field-group">
-        <label>Nome do Estabelecimento</label>
-        <input type="text" id="nome" value="Minha Pizzaria" oninput="updatePreview()">
-        
-        <label>WhatsApp (Link Direto)</label>
-        <input type="text" id="whats" value="551199999999" oninput="updatePreview()">
+        <label>Informações Principais</label>
+        <input type="text" id="nome" placeholder="Nome da Pizzaria" value="Vitorelli Pizzaria" oninput="sincronizar()">
+        <input type="text" id="whats" placeholder="WhatsApp (ex: 5511...)" value="5511999999999" oninput="sincronizar()">
     </div>
 
     <div class="field-group">
-        <h3>Pizzas</h3>
-        <div id="pizza-list">
-            </div>
-        <button onclick="addItem()" style="width:100%; padding: 5px; margin-top: 10px;">+ Adicionar Sabor</button>
+        <label>Sabores (Pizzas)</label>
+        <div id="lista-itens"></div>
+        <button class="btn-add" onclick="adicionarItem()">+ Adicionar Sabor</button>
     </div>
 </div>
 
 <div id="preview">
-    <div class="iphone-frame" id="iphone-content">
-        </div>
+    <div class="iphone-frame" id="iphone-screen"></div>
 </div>
 
-<button class="btn-export" onclick="abrirCheckout()">📥 BAIXAR MEU CARDÁPIO</button>
+<button class="btn-export" onclick="abrirModal()">📥 BAIXAR PROJETO</button>
 
 <div id="modal-pay" class="modal">
     <div class="modal-content">
-        <h2>Tudo Pronto! 🍕</h2>
-        <p>Para baixar os arquivos e publicar no seu GitHub/Cloudflare, escolha o pagamento:</p>
+        <h3>Quase lá! 🍕</h3>
+        <p style="color: #ccc; font-size: 14px;">Escolha como deseja liberar o download dos arquivos:</p>
         
-        <a href="https://mpago.la/2UwE4uj" target="_blank" class="btn-pay btn-mp" onclick="liberar()">
-            Pagar R$ 39,90 (Mercado Pago)
+        <a href="https://mpago.la/2UwE4uj" target="_blank" class="btn-pay mp" onclick="processarDownload()">
+            Pagar R$ 39,90 (Cartão/Pix)
         </a>
         
-        <button class="btn-pay btn-ln" onclick="alert('Envie 10 sats para $Labriolag'); liberar()">
-            Pagar 10 Sats (Lightning Network)
+        <button class="btn-pay ln" onclick="pagarLightning()">
+            Pagar 10 Sats (Lightning $Labriolag)
         </button>
         
-        <button onclick="document.getElementById('modal-pay').style.display='none'" style="background:none; border:none; color:#666; cursor:pointer;">Cancelar</button>
+        <button onclick="fecharModal()" style="background:none; border:none; color:#555; cursor:pointer; margin-top:10px;">Voltar e editar</button>
     </div>
 </div>
 
 <script>
-    // Dados Iniciais
-    let dados = {
-        nome: "Vitorelli Pizzaria",
-        itens: [{sabor: "Mussarela", preco: "35,00"}]
+    // Estado Global da Aplicação
+    let cardapio = [
+        { sabor: "Mussarela Clássica", preco: "35,00" },
+        { sabor: "Calabresa Especial", preco: "38,00" }
+    ];
+
+    // Inicialização
+    window.onload = () => {
+        renderizarInputs();
+        atualizarPreview();
     };
 
-    function updatePreview() {
-        const nome = document.getElementById('nome').value;
-        const frame = document.getElementById('iphone-content');
+    function adicionarItem() {
+        cardapio.push({ sabor: "Novo Sabor", preco: "0,00" });
+        renderizarInputs();
+        atualizarPreview();
+    }
+
+    function removerItem(index) {
+        cardapio.splice(index, 1);
+        renderizarInputs();
+        atualizarPreview();
+    }
+
+    function sincronizar() {
+        const nomes = document.querySelectorAll('.input-sabor');
+        const precos = document.querySelectorAll('.input-preco');
         
-        frame.innerHTML = `
-            <div style="padding:20px; text-align:center; background:#ff4747; color:white">
-                <h1 style="margin:0">${nome}</h1>
+        cardapio = Array.from(nomes).map((el, i) => ({
+            sabor: el.value,
+            preco: precos[i].value
+        }));
+        
+        atualizarPreview();
+    }
+
+    function renderizarInputs() {
+        const container = document.getElementById('lista-itens');
+        container.innerHTML = cardapio.map((item, index) => `
+            <div class="item-row">
+                <input type="text" class="input-sabor" value="${item.sabor}" oninput="sincronizar()" style="flex:2">
+                <input type="text" class="input-preco" value="${item.preco}" oninput="sincronizar()" style="flex:1">
+                <button onclick="removerItem(${index})" style="background:none; border:none; color:red; cursor:pointer;">✕</button>
             </div>
-            <div style="padding:15px">
-                <h3>🍕 Pizzas</h3>
-                ${dados.itens.map(i => `<p><strong>${i.sabor}</strong> - R$ ${i.preco}</p>`).join('')}
+        `).join('');
+    }
+
+    function atualizarPreview() {
+        const nome = document.getElementById('nome').value;
+        const screen = document.getElementById('iphone-screen');
+        
+        screen.innerHTML = `
+            <div style="background:#e31c1c; color:#fff; padding:30px 20px; text-align:center;">
+                <h2 style="margin:0">${nome}</h2>
+                <small>Peça agora pelo WhatsApp</small>
             </div>
-            <div style="position:absolute; bottom:20px; width:100%; text-align:center">
-                <button style="background:#25d366; color:white; border:none; padding:10px 20px; border-radius:20px">Pedir no Whats</button>
+            <div style="padding:15px;">
+                <h4 style="border-bottom: 2px solid #eee; padding-bottom:5px;">🍕 Nossas Pizzas</h4>
+                ${cardapio.map(i => `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:14px;">
+                        <span>${i.sabor}</span>
+                        <strong>R$ ${i.preco}</strong>
+                    </div>
+                `).join('')}
+            </div>
+            <div style="position:absolute; bottom:20px; width:100%; display:flex; justify-content:center;">
+                <div style="background:#25d366; color:white; padding:12px 30px; border-radius:30px; font-weight:bold; font-size:13px;">ENVIAR PEDIDO</div>
             </div>
         `;
     }
 
-    function addItem() {
-        dados.itens.push({sabor: "Novo Sabor", preco: "0,00"});
-        updatePreview();
+    // Lógica de Pagamento e Download
+    function abrirModal() { document.getElementById('modal-pay').style.display = 'flex'; }
+    function fecharModal() { document.getElementById('modal-pay').style.display = 'none'; }
+
+    function pagarLightning() {
+        const address = "labriolag@getalby.com"; // Seu Lightning Address
+        alert(`Envie 10 sats para: ${address}\nApós o envio, o download será liberado.`);
+        processarDownload();
     }
 
-    function abrirCheckout() {
-        document.getElementById('modal-pay').style.display = 'flex';
-    }
+    async function processarDownload() {
+        const zip = new JSZip();
+        const nomeEmpresa = document.getElementById('nome').value;
+        const zap = document.getElementById('whats').value;
 
-    function liberar() {
-        // Lógica de download real (ZIP) após o clique (simulação de sucesso)
-        setTimeout(() => {
-            alert("Pagamento identificado! Iniciando download...");
-            fecharModal();
-        }, 1000);
-    }
+        // Conteúdo do Config.js
+        const configJS = `
+/* Configuração Gerada por LabrioBuilder */
+export const CONFIG = {
+    nome: "${nomeEmpresa}",
+    whatsapp: "${zap}",
+    cardapio: ${JSON.stringify(cardapio, null, 4)}
+};`;
 
-    // Inicializa
-    updatePreview();
+        zip.file("config.js", configJS);
+        zip.file("README.txt", `Instruções para ${nomeEmpresa}:\n1. Suba o config.js na sua pasta raiz do GitHub.`);
+
+        const blob = await zip.generateAsync({type:"blob"});
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `cardapio_${nomeEmpresa.replace(/\s+/g, '_')}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        fecharModal();
+    }
 </script>
 
 </body>
