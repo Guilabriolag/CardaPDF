@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LABRIOLAG - Cardápio Builder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Builder Vitorelli v2</h1>
+            <button onclick="abrirCheckout()">📥 Baixar Projeto (ZIP/PDF)</button>
+        </header>
+        
+        <main id="editor-container">
+            </main>
+    </div>
+
+    <div id="modal-pay" class="modal">
+        <div class="modal-content">
+            <h2>Finalizar Exportação</h2>
+            <p>Escolha o método para liberar o download:</p>
+            
+            <div class="pay-options">
+                <a href="https://mpago.la/2UwE4uj" target="_blank" class="btn-pay mp">
+                    💳 R$ 39,90 (Mercado Pago)
+                </a>
+                
+                <button onclick="gerarLightning()" class="btn-pay ln">
+                    ⚡ 10 Sats ($Labriolag)
+                </button>
+            </div>
+            
+            <div id="ln-area" style="display:none;">
+                <p>Envie 10 sats para: <strong>labriolag@getalby.com</strong></p>
+                <div id="qrcode"></div>
+                <button onclick="confirmarManual()">Já paguei, liberar!</button>
+            </div>
+            
+            <button onclick="fecharModal()" class="btn-close">Cancelar</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
