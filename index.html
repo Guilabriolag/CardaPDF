@@ -3,188 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LABRIOLAG - Cardápio Builder</title>
-    <!-- Bibliotecas Necessárias -->
+    <title>Builder Pro - Labriolag</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        :root { --accent: #f7931a; --bg: #0a0a0a; --card: #161616; --text: #f0f0f0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Painel Lateral */
-        #editor { width: 400px; padding: 25px; overflow-y: auto; border-right: 1px solid #333; background: #0f0f0f; }
-        .field-group { background: var(--card); padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #222; }
-        label { display: block; font-size: 12px; color: var(--accent); text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
-        input { width: 100%; padding: 12px; background: #000; color: #fff; border: 1px solid #333; border-radius: 4px; margin-bottom: 10px; box-sizing: border-box; }
-        
-        .item-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-        .btn-add { width: 100%; padding: 10px; background: #222; color: #fff; border: 1px dashed #444; cursor: pointer; border-radius: 4px; }
-        .btn-add:hover { background: #333; }
+        :root { --accent: #f7931a; --bg: #0f0f12; --card: #1c1c21; --primary: #e31c1c; }
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Preview Mobile */
-        #preview { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; }
-        .iphone-frame { width: 320px; height: 620px; border: 12px solid #222; border-radius: 40px; background: #fff; color: #111; overflow-y: auto; position: relative; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
-        
-        /* Modal Pay */
-        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; }
-        .modal-content { background: #1a1a1a; padding: 30px; border-radius: 12px; text-align: center; max-width: 350px; border: 1px solid var(--accent); }
-        .btn-pay { display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; }
-        .mp { background: #009ee3; color: white; }
-        .ln { background: var(--accent); color: black; }
+        /* Sidebar Otimizada */
+        #editor { width: 420px; background: #000; display: flex; flex-direction: column; border-right: 1px solid #222; }
+        .tabs { display: flex; background: #111; border-bottom: 1px solid #222; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: none; color: #666; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); background: #1a1a1a; }
 
-        .btn-export { position: fixed; bottom: 30px; right: 30px; background: var(--accent); color: #000; border: none; padding: 18px 35px; font-weight: bold; border-radius: 50px; cursor: pointer; font-size: 16px; box-shadow: 0 10px 20px rgba(247, 147, 26, 0.3); }
+        .content-area { flex: 1; padding: 20px; overflow-y: auto; }
+        .field-group { margin-bottom: 20px; }
+        label { display: block; font-size: 11px; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        input { width: 100%; padding: 12px; background: #1c1c21; border: 1px solid #333; color: #fff; border-radius: 6px; font-size: 14px; }
+        input:focus { border-color: var(--accent); outline: none; }
+
+        /* Item Row */
+        .item-row { display: flex; gap: 8px; margin-bottom: 10px; background: #16161a; padding: 8px; border-radius: 6px; }
+        .btn-del { background: none; border: none; color: #ff4444; cursor: pointer; padding: 0 10px; }
+
+        /* Preview (iPhone) */
+        #preview { flex: 1; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); }
+        .mockup { width: 310px; height: 630px; border: 12px solid #222; border-radius: 45px; background: #fff; overflow: hidden; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+
+        /* Footer do Builder */
+        .builder-footer { padding: 20px; background: #111; border-top: 1px solid #222; }
+        .btn-main { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 14px; text-transform: uppercase; }
+        .btn-main:hover { transform: scale(1.02); filter: brightness(1.1); }
+
+        /* Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-box { background: #1c1c21; padding: 30px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #333; }
     </style>
 </head>
 <body>
 
 <div id="editor">
-    <h2 style="color: var(--accent)">Labrio Builder v1</h2>
-    <p style="font-size: 13px; color: #888;">Configure seu cardápio em tempo real.</p>
+    <div style="padding: 20px; border-bottom: 1px solid #222;">
+        <h2 style="margin:0; color:var(--accent); font-size: 18px;">Labrio Dashboard</h2>
+    </div>
     
-    <div class="field-group">
-        <label>Informações Principais</label>
-        <input type="text" id="nome" placeholder="Nome da Pizzaria" value="Vitorelli Pizzaria" oninput="sincronizar()">
-        <input type="text" id="whats" placeholder="WhatsApp (ex: 5511...)" value="5511999999999" oninput="sincronizar()">
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('geral')">LOJA</button>
+        <button class="tab-btn" onclick="switchTab('cardapio')">PRODUTOS</button>
+        <button class="tab-btn" onclick="switchTab('taxas')">TAXAS</button>
     </div>
 
-    <div class="field-group">
-        <label>Sabores (Pizzas)</label>
-        <div id="lista-itens"></div>
-        <button class="btn-add" onclick="adicionarItem()">+ Adicionar Sabor</button>
+    <div class="content-area" id="tab-geral">
+        <div class="field-group">
+            <label>Nome Comercial</label>
+            <input type="text" id="nome" value="Vitorelli Alphaville" oninput="sync()">
+        </div>
+        <div class="field-group">
+            <label>Link do WhatsApp</label>
+            <input type="text" id="whats" value="551199999999" oninput="sync()">
+        </div>
+    </div>
+
+    <div class="content-area" id="tab-cardapio" style="display:none">
+        <div id="item-container"></div>
+        <button onclick="addItem()" class="btn-main" style="background:#222; font-size: 12px; margin-top:10px;">+ Novo Sabor</button>
+    </div>
+
+    <div class="builder-footer">
+        <button class="btn-main" onclick="openCheckout()">📥 Publicar e Baixar</button>
     </div>
 </div>
 
 <div id="preview">
-    <div class="iphone-frame" id="iphone-screen"></div>
+    <div class="mockup" id="phone-screen"></div>
 </div>
 
-<button class="btn-export" onclick="abrirModal()">📥 BAIXAR PROJETO</button>
-
 <div id="modal-pay" class="modal">
-    <div class="modal-content">
-        <h3>Quase lá! 🍕</h3>
-        <p style="color: #ccc; font-size: 14px;">Escolha como deseja liberar o download dos arquivos:</p>
-        
-        <a href="https://mpago.la/2UwE4uj" target="_blank" class="btn-pay mp" onclick="processarDownload()">
-            Pagar R$ 39,90 (Cartão/Pix)
-        </a>
-        
-        <button class="btn-pay ln" onclick="pagarLightning()">
-            Pagar 10 Sats (Lightning $Labriolag)
-        </button>
-        
-        <button onclick="fecharModal()" style="background:none; border:none; color:#555; cursor:pointer; margin-top:10px;">Voltar e editar</button>
+    <div class="modal-box">
+        <h3>Finalizar Projeto 🚀</h3>
+        <p style="color:#888; font-size: 14px;">Escolha o método de liberação:</p>
+        <a href="https://mpago.la/2UwE4uj" target="_blank" class="btn-main" style="display:block; text-decoration:none; background:#009ee3; margin-bottom:12px; color:#fff" onclick="notify('PIX/CC')">R$ 39,90 via Mercado Pago</a>
+        <button class="btn-main" onclick="notify('Lightning'); processDownload()">10 Sats via Lightning</button>
+        <button onclick="closeModal()" style="background:none; border:none; color:#555; margin-top:15px; cursor:pointer;">Continuar editando</button>
     </div>
 </div>
 
 <script>
-    // Estado Global da Aplicação
-    let cardapio = [
-        { sabor: "Mussarela Clássica", preco: "35,00" },
-        { sabor: "Calabresa Especial", preco: "38,00" }
-    ];
-
-    // Inicialização
-    window.onload = () => {
-        renderizarInputs();
-        atualizarPreview();
+    let state = JSON.parse(localStorage.getItem('labrio_data')) || {
+        nome: "Vitorelli Pizzaria",
+        whats: "551199999999",
+        itens: [{sabor: "Calabresa", preco: "45.00"}, {sabor: "Mussarela", preco: "42.00"}]
     };
 
-    function adicionarItem() {
-        cardapio.push({ sabor: "Novo Sabor", preco: "0,00" });
-        renderizarInputs();
-        atualizarPreview();
+    function sync() {
+        state.nome = document.getElementById('nome').value;
+        state.whats = document.getElementById('whats').value;
+        localStorage.setItem('labrio_data', JSON.stringify(state));
+        renderPreview();
     }
 
-    function removerItem(index) {
-        cardapio.splice(index, 1);
-        renderizarInputs();
-        atualizarPreview();
+    function switchTab(tab) {
+        document.querySelectorAll('.content-area').forEach(d => d.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + tab).style.display = 'block';
+        event.currentTarget.classList.add('active');
     }
 
-    function sincronizar() {
-        const nomes = document.querySelectorAll('.input-sabor');
-        const precos = document.querySelectorAll('.input-preco');
-        
-        cardapio = Array.from(nomes).map((el, i) => ({
-            sabor: el.value,
-            preco: precos[i].value
-        }));
-        
-        atualizarPreview();
+    function addItem() {
+        state.itens.push({sabor: "Novo Item", preco: "0.00"});
+        renderList();
+        sync();
     }
 
-    function renderizarInputs() {
-        const container = document.getElementById('lista-itens');
-        container.innerHTML = cardapio.map((item, index) => `
+    function renderList() {
+        const container = document.getElementById('item-container');
+        container.innerHTML = state.itens.map((it, idx) => `
             <div class="item-row">
-                <input type="text" class="input-sabor" value="${item.sabor}" oninput="sincronizar()" style="flex:2">
-                <input type="text" class="input-preco" value="${item.preco}" oninput="sincronizar()" style="flex:1">
-                <button onclick="removerItem(${index})" style="background:none; border:none; color:red; cursor:pointer;">✕</button>
+                <input type="text" value="${it.sabor}" oninput="state.itens[${idx}].sabor=this.value; sync()" style="flex:2">
+                <input type="text" value="${it.preco}" oninput="state.itens[${idx}].preco=this.value; sync()" style="flex:1">
+                <button class="btn-del" onclick="state.itens.splice(${idx},1); renderList(); sync()">✕</button>
             </div>
         `).join('');
     }
 
-    function atualizarPreview() {
-        const nome = document.getElementById('nome').value;
-        const screen = document.getElementById('iphone-screen');
-        
-        screen.innerHTML = `
-            <div style="background:#e31c1c; color:#fff; padding:30px 20px; text-align:center;">
-                <h2 style="margin:0">${nome}</h2>
-                <small>Peça agora pelo WhatsApp</small>
+    function renderPreview() {
+        document.getElementById('phone-screen').innerHTML = `
+            <div style="background:var(--primary); color:#fff; padding:40px 20px; text-align:center">
+                <h1 style="margin:0; font-size:22px">${state.nome}</h1>
             </div>
-            <div style="padding:15px;">
-                <h4 style="border-bottom: 2px solid #eee; padding-bottom:5px;">🍕 Nossas Pizzas</h4>
-                ${cardapio.map(i => `
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:14px;">
-                        <span>${i.sabor}</span>
-                        <strong>R$ ${i.preco}</strong>
-                    </div>
-                `).join('')}
+            <div style="padding:20px; color:#333">
+                <h3 style="border-bottom:1px solid #ddd; padding-bottom:10px">🍕 Cardápio</h3>
+                ${state.itens.map(i => `<div style="display:flex; justify-content:space-between; margin-bottom:10px"><span>${i.sabor}</span><strong>R$ ${i.preco}</strong></div>`).join('')}
             </div>
-            <div style="position:absolute; bottom:20px; width:100%; display:flex; justify-content:center;">
-                <div style="background:#25d366; color:white; padding:12px 30px; border-radius:30px; font-weight:bold; font-size:13px;">ENVIAR PEDIDO</div>
+            <div style="position:absolute; bottom:30px; width:100%; padding:0 20px">
+                <button style="width:100%; background:#25d366; color:#fff; border:none; padding:15px; border-radius:30px; font-weight:bold">Pedir pelo WhatsApp</button>
             </div>
         `;
     }
 
-    // Lógica de Pagamento e Download
-    function abrirModal() { document.getElementById('modal-pay').style.display = 'flex'; }
-    function fecharModal() { document.getElementById('modal-pay').style.display = 'none'; }
-
-    function pagarLightning() {
-        const address = "labriolag@getalby.com"; // Seu Lightning Address
-        alert(`Envie 10 sats para: ${address}\nApós o envio, o download será liberado.`);
-        processarDownload();
+    // WEBHOOK NOTIFICATION
+    function notify(method) {
+        const webhookURL = "SUA_WEBHOOK_URL_AQUI"; // Discord/Slack
+        const msg = { content: `💰 **Novo Intento de Compra!**\nLoja: ${state.nome}\nMétodo: ${method}\nWhatsApp: ${state.whats}` };
+        fetch(webhookURL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(msg) }).catch(() => {});
     }
 
-    async function processarDownload() {
+    function openCheckout() { document.getElementById('modal-pay').style.display = 'flex'; }
+    function closeModal() { document.getElementById('modal-pay').style.display = 'none'; }
+
+    async function processDownload() {
         const zip = new JSZip();
-        const nomeEmpresa = document.getElementById('nome').value;
-        const zap = document.getElementById('whats').value;
-
-        // Conteúdo do Config.js
-        const configJS = `
-/* Configuração Gerada por LabrioBuilder */
-export const CONFIG = {
-    nome: "${nomeEmpresa}",
-    whatsapp: "${zap}",
-    cardapio: ${JSON.stringify(cardapio, null, 4)}
-};`;
-
-        zip.file("config.js", configJS);
-        zip.file("README.txt", `Instruções para ${nomeEmpresa}:\n1. Suba o config.js na sua pasta raiz do GitHub.`);
-
-        const blob = await zip.generateAsync({type:"blob"});
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `cardapio_${nomeEmpresa.replace(/\s+/g, '_')}.zip`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        fecharModal();
+        zip.file("config.js", `export const CONFIG = ${JSON.stringify(state, null, 4)};`);
+        const content = await zip.generateAsync({type:"blob"});
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(content);
+        link.download = `site_${state.nome.replace(/\s/g, '_')}.zip`;
+        link.click();
+        closeModal();
     }
+
+    // Init
+    document.getElementById('nome').value = state.nome;
+    document.getElementById('whats').value = state.whats;
+    renderList();
+    renderPreview();
 </script>
 
 </body>
